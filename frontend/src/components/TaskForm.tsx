@@ -170,7 +170,7 @@ export default function TaskForm({ task, onSubmit, onClose }: TaskFormProps) {
                 id="task-priority"
                 className="form-select"
                 value={priority}
-                onChange={(e) => setPriority(e.target.value)}
+                onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -186,7 +186,7 @@ export default function TaskForm({ task, onSubmit, onClose }: TaskFormProps) {
                 id="task-status"
                 className="form-select"
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => setStatus(e.target.value as 'pending' | 'in_progress' | 'completed')}
               >
                 <option value="pending">Pending</option>
                 <option value="in_progress">In Progress</option>
