@@ -17,3 +17,11 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Coverage
+.coverage
+htmlcov/
+
+# Credentials
+db_password.txt
+

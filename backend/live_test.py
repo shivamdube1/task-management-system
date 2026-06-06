@@ -23,7 +23,7 @@ print("=" * 60)
 print("\n--- 1. Authentication ---")
 r = httpx.post(f"{BASE}/api/auth/register", json={
     "name": "Admin User",
-    "email": "admin@live.test",
+    "email": "admin@example.com",
     "password": PASS,
     "role": "admin",
 })
@@ -33,7 +33,7 @@ assert r.status_code == 201, f"Expected 201, got {r.status_code}"
 # 2. REGISTER USER
 r = httpx.post(f"{BASE}/api/auth/register", json={
     "name": "Regular User",
-    "email": "user@live.test",
+    "email": "user@example.com",
     "password": PASS,
     "role": "user",
 })
@@ -44,7 +44,7 @@ user_id = r.json()["id"]
 # 3. DUPLICATE EMAIL (should be 409)
 r = httpx.post(f"{BASE}/api/auth/register", json={
     "name": "Dupe",
-    "email": "admin@live.test",
+    "email": "admin@example.com",
     "password": PASS,
     "role": "user",
 })
@@ -53,7 +53,7 @@ assert r.status_code == 409
 
 # 4. LOGIN ADMIN
 r = httpx.post(f"{BASE}/api/auth/login", json={
-    "email": "admin@live.test",
+    "email": "admin@example.com",
     "password": PASS,
 })
 p("Login Admin", r.status_code, r.json())
@@ -65,7 +65,7 @@ assert "access_token" in tokens and "refresh_token" in tokens
 
 # 5. LOGIN USER
 r = httpx.post(f"{BASE}/api/auth/login", json={
-    "email": "user@live.test",
+    "email": "user@example.com",
     "password": PASS,
 })
 p("Login User", r.status_code, r.json())
@@ -74,7 +74,7 @@ user_access = r.json()["access_token"]
 
 # 6. WRONG PASSWORD (should be 401)
 r = httpx.post(f"{BASE}/api/auth/login", json={
-    "email": "admin@live.test",
+    "email": "admin@example.com",
     "password": "wrongpassword",
 })
 p("Wrong Password → 401", r.status_code, r.json())

@@ -202,3 +202,108 @@ class TestStatusTransitions:
         )
         assert response.status_code == 400
         assert "terminal state" in response.json()["detail"]
+
+    def test_status_update_on_unassigned_task_returns_403(
+        self, client: TestClient, admin_token: str, user_token: str
+    ):
+        # Create unassigned task
+        resp = client.post(
+            "/api/tasks",
+            json={"title": "Unassigned status test", "due_at": _future_iso()},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        task_id = resp.json()["id"]
+
+        # Regular user tries to update its status -> should fail with 403
+        response = client.patch(
+            f"/api/tasks/{task_id}/status",
+            json={"status": "in_progress"},
+            headers={"Authorization": f"Bearer {user_token}"},
+        )
+        assert response.status_code == 403
+        assert "only update tasks assigned to you" in response.json()["detail"]
+
+
+class TestTaskEdgeCases:
+    """Tests for edge cases and errors in task operations."""
+
+    def test_create_task_nonexistent_assignee(self, client: TestClient, admin_token: str):
+        response = client.post(
+            "/api/tasks",
+            json={
+                "title": "Ghost Task",
+                "due_at": _future_iso(),
+                "assigned_to": "00000000-0000-0000-0000-000000000000",
+            },
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == 404
+        assert "Assigned user not found" in response.json()["detail"]
+
+    def test_update_task_nonexistent_assignee(self, client: TestClient, admin_token: str):
+        # Create valid task
+        resp = client.post(
+            "/api/tasks",
+            json={"title": "Valid Task", "due_at": _future_iso()},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        task_id = resp.json()["id"]
+
+        # Update with invalid assignee
+        response = client.put(
+            f"/api/tasks/{task_id}",
+            json={"assigned_to": "00000000-0000-0000-0000-000000000000"},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == 404
+
+    def test_update_nonexistent_task(self, client: TestClient, admin_token: str):
+        response = client.put(
+            "/api/tasks/00000000-0000-0000-0000-000000000000",
+            json={"title": "Updated Name"},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == 404
+        assert "Task not found" in response.json()["detail"]
+
+    def test_delete_nonexistent_task(self, client: TestClient, admin_token: str):
+        response = client.delete(
+            "/api/tasks/00000000-0000-0000-0000-000000000000",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == 404
+        assert "Task not found" in response.json()["detail"]
+
+    def test_update_task_status_nonexistent_task(self, client: TestClient, user_token: str):
+        response = client.patch(
+            "/api/tasks/00000000-0000-0000-0000-000000000000/status",
+            json={"status": "in_progress"},
+            headers={"Authorization": f"Bearer {user_token}"},
+        )
+        assert response.status_code == 404
+
+    def test_list_tasks_with_filtering(self, client: TestClient, admin_token: str):
+        # Create some tasks with different values
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "priority": "high", "due_at": _future_iso()},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "priority": "low", "due_at": _future_iso()},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+
+        # Filter by priority
+        res = client.get("/api/tasks?priority=high", headers={"Authorization": f"Bearer {admin_token}"})
+        assert res.status_code == 200
+        assert len(res.json()) >= 1
+        for t in res.json():
+            assert t["priority"] == "high"
+
+        # Filter by status
+        res = client.get("/api/tasks?status=pending", headers={"Authorization": f"Bearer {admin_token}"})
+        assert res.status_code == 200
+        assert len(res.json()) >= 2
+

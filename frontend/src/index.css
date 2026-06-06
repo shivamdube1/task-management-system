@@ -363,6 +363,10 @@ a:hover {
   border-color: var(--accent-indigo);
   box-shadow: 0 0 0 3px var(--accent-indigo-glow);
 }
+.form-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
 
 .form-error {
   font-size: 12px;
@@ -934,12 +938,13 @@ a:hover {
 
 .rdp-root {
   --rdp-day-font: 400 14px var(--font-sans);
-  --rdp-day-height: 36px;
-  --rdp-day-width: 36px;
+  --rdp-day-height: 44px;
+  --rdp-day-width: 44px;
   --rdp-selected-font: 600 14px var(--font-sans);
   --rdp-accent-color: var(--accent-indigo);
   --rdp-accent-background-color: var(--accent-indigo-glow);
   color: var(--text-primary);
+  margin: 12px;
 }
 
 .rdp-month_caption {

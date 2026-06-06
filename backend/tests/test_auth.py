@@ -99,3 +99,65 @@ class TestMe:
         data = response.json()
         assert data["email"] == "admin@test.com"
         assert data["role"] == "admin"
+
+
+class TestRefresh:
+    """Tests for POST /api/auth/refresh."""
+
+    def test_refresh_success(self, client: TestClient):
+        # Register and login to get refresh token
+        client.post("/api/auth/register", json={
+            "name": "Refresh User",
+            "email": "refresh@test.com",
+            "password": "password123",
+            "role": "user"
+        })
+        login_resp = client.post("/api/auth/login", json={
+            "email": "refresh@test.com",
+            "password": "password123"
+        })
+        refresh_token = login_resp.json()["refresh_token"]
+
+        response = client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
+        assert response.status_code == 200
+        assert "access_token" in response.json()
+
+    def test_refresh_invalid_token_type(self, client: TestClient):
+        # Access token is invalid for refreshing
+        client.post("/api/auth/register", json={
+            "name": "Refresh User 2",
+            "email": "refresh2@test.com",
+            "password": "password123",
+            "role": "user"
+        })
+        login_resp = client.post("/api/auth/login", json={
+            "email": "refresh2@test.com",
+            "password": "password123"
+        })
+        access_token = login_resp.json()["access_token"]
+
+        response = client.post("/api/auth/refresh", json={"refresh_token": access_token})
+        assert response.status_code == 401
+        assert "Invalid token type" in response.json()["detail"]
+
+    def test_refresh_expired_or_invalid(self, client: TestClient):
+        response = client.post("/api/auth/refresh", json={"refresh_token": "completely-invalid-token"})
+        assert response.status_code == 401
+        assert "Invalid" in response.json()["detail"]
+
+
+class TestLogout:
+    """Tests for POST /api/auth/logout."""
+
+    def test_logout_success(self, client: TestClient, user_token: str):
+        response = client.post(
+            "/api/auth/logout",
+            headers={"Authorization": f"Bearer {user_token}"},
+        )
+        assert response.status_code == 200
+        assert response.json()["message"] == "Successfully logged out"
+
+    def test_logout_without_token_returns_401(self, client: TestClient):
+        response = client.post("/api/auth/logout")
+        assert response.status_code == 401
+
