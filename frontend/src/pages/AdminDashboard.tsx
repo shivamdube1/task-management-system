@@ -31,6 +31,7 @@ export default function AdminDashboard() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [filterUser, setFilterUser] = useState('');
@@ -84,14 +85,8 @@ export default function AdminDashboard() {
     toast.success('Task updated successfully');
   };
 
-  const handleDelete = async (taskId: string) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
-    try {
-      await deleteTask(taskId);
-      toast.success('Task deleted');
-    } catch {
-      toast.error('Failed to delete task');
-    }
+  const handleDelete = (taskId: string) => {
+    setDeletingTaskId(taskId);
   };
 
   const handleEdit = (task: Task) => {
@@ -297,6 +292,48 @@ export default function AdminDashboard() {
           onSubmit={editingTask ? handleUpdate : handleCreate}
           onClose={handleCloseForm}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingTaskId && (
+        <div className="modal-overlay" onClick={() => setDeletingTaskId(null)}>
+          <div className="modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title" style={{ color: 'var(--accent-rose)' }}>Delete Task</h2>
+              <button className="modal-close" onClick={() => setDeletingTaskId(null)} aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: '16px 0', color: 'var(--text-secondary)' }}>
+              Are you sure you want to permanently delete this task? This action cannot be undone.
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setDeletingTaskId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={async () => {
+                  const id = deletingTaskId;
+                  setDeletingTaskId(null);
+                  try {
+                    await deleteTask(id);
+                    toast.success('Task deleted');
+                  } catch {
+                    toast.error('Failed to delete task');
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
